@@ -24,8 +24,26 @@ addEventListener('fetch', event => {
   }
 })
 
+function setCachePolicy(headers, pathname) {
+  if(pathname.endsWith('/')) {
+    return
+  }
+  const extStartIndex = pathname.lastIndexOf('.')
+  if(extStartIndex == -1) {
+    return
+  }
+
+  const extension = pathname.substr(extStartIndex)
+
+  const safeToCache = ['.css', '.ttf', '.woff', '.woff2', '.js']
+  if (safeToCache.includes(extension)) {
+    headers.set("Cache-Control", "max-age=31536000")
+  }
+}
+
 async function handleEvent(event) {
   const url = new URL(event.request.url)
+
   let options = {}
 
   /**
@@ -51,6 +69,8 @@ async function handleEvent(event) {
     response.headers.set("X-Frame-Options", "DENY");
     response.headers.set("Referrer-Policy", "unsafe-url");
     response.headers.set("Feature-Policy", "none");
+
+    setCachePolicy(response.headers, url.pathname);
 
     return response;
 
