@@ -1,9 +1,10 @@
 name = "codeinred"
 type = 'webpack'
-account_id = ''
-route = ''
-zone_id = ''
+route = 'codeinred.io/*'
 usage_model = ''
 workers_dev = true
 target_type = "webpack"
-site = {bucket = "",entry-point = "workers-site"}
+
+[site]
+bucket = "../public"
+entry-point = "workers-site"
