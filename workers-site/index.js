@@ -32,24 +32,23 @@ function setCachePolicy(headers, extension) {
   }
 }
 
-async function handleEvent(event) {
-  const url_string = event.request.url
-
+function getProperties(url_string) {
   const endsWithSlash = url_string.endsWith('/')
   // If the page ends with a slash, it's not a file
-  var extStartIndex = -1
   var isFile = false;
-  var extension = ""
+  var missingSlash = false
+  var fileExtension = ""
+  var atRoot = false
 
   if (!endsWithSlash) {
     const nameStartIndex = url_string.lastIndexOf('/')
 
-    const notAtRoot = nameStartIndex != -1
-    if (notAtRoot) {
+    atRoot = nameStartIndex == -1
+    if (!atRoot) {
       // We get the filename
       const filename = url_string.substr(nameStartIndex)
       // We look for the extension in the filename
-      extStartIndex = filename.lastIndexOf('.')
+      const extStartIndex = filename.lastIndexOf('.')
 
       if (extStartIndex == -1) {
         // If...
@@ -57,15 +56,32 @@ async function handleEvent(event) {
         // - We're not at the root of the site
         // - The filename is missing an extension
         // Then it's not actually a filename.
-        // Instead, we're missing a slash, and so we return a redirect
+        // Instead, we're missing a slash.
 
-        return Response.redirect(new URL(url_string + '/'), 301)
+        missingSlash = true
       } else {
-        extension = filename.substr(extStartIndex)
+        fileExtension = filename.substr(extStartIndex)
         isFile = true
       }
     }
   }
+  return {
+    isFile,
+    fileExtension,
+    missingSlash,
+    atRoot
+  }
+}
+
+async function handleEvent(event) {
+  const url_string = event.request.url
+  const properties = getProperties(url_string)
+
+  // If the url is missing a slash, then we return a redirect
+  if (properties.missingSlash) {
+    return Response.redirect(new URL(url_string + '/'), 301)
+  }
+
 
   let options = {}
 
@@ -93,8 +109,8 @@ async function handleEvent(event) {
     response.headers.set("Referrer-Policy", "unsafe-url");
     response.headers.set("Feature-Policy", "none");
 
-    if(isFile) {
-      setCachePolicy(response.headers, extension);
+    if (properties.isFile) {
+      setCachePolicy(response.headers, properties.fileExtension);
     }
 
     return response;
