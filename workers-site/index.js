@@ -24,16 +24,7 @@ addEventListener('fetch', event => {
   }
 })
 
-function setCachePolicy(headers, pathname) {
-  if(pathname.endsWith('/')) {
-    return
-  }
-  const extStartIndex = pathname.lastIndexOf('.')
-  if(extStartIndex == -1) {
-    return
-  }
-
-  const extension = pathname.substr(extStartIndex)
+function setCachePolicy(headers, extension) {
 
   const safeToCache = ['.css', '.ttf', '.woff', '.woff2', '.js']
   if (safeToCache.includes(extension)) {
@@ -42,7 +33,39 @@ function setCachePolicy(headers, pathname) {
 }
 
 async function handleEvent(event) {
-  const url = new URL(event.request.url)
+  const url_string = event.request.url
+
+  const endsWithSlash = url_string.endsWith('/')
+  // If the page ends with a slash, it's not a file
+  var extStartIndex = -1
+  var isFile = false;
+  var extension = ""
+
+  if (!endsWithSlash) {
+    const nameStartIndex = url_string.lastIndexOf('/')
+
+    const notAtRoot = nameStartIndex != -1
+    if (notAtRoot) {
+      // We get the filename
+      const filename = url_string.substr(nameStartIndex)
+      // We look for the extension in the filename
+      extStartIndex = filename.lastIndexOf('.')
+
+      if (extStartIndex == -1) {
+        // If...
+        // - There's no slash at the end of the path
+        // - We're not at the root of the site
+        // - The filename is missing an extension
+        // Then it's not actually a filename.
+        // Instead, we're missing a slash, and so we return a redirect
+
+        return Response.redirect(new URL(url_string + '/'), 301)
+      } else {
+        extension = filename.substr(extStartIndex)
+        isFile = true
+      }
+    }
+  }
 
   let options = {}
 
@@ -70,7 +93,9 @@ async function handleEvent(event) {
     response.headers.set("Referrer-Policy", "unsafe-url");
     response.headers.set("Feature-Policy", "none");
 
-    setCachePolicy(response.headers, url.pathname);
+    if(isFile) {
+      setCachePolicy(response.headers, extension);
+    }
 
     return response;
 
