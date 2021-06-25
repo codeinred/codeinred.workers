@@ -26,7 +26,7 @@ addEventListener('fetch', event => {
 
 function setCachePolicy(headers, extension) {
 
-  const safeToCache = ['.css', '.ttf', '.woff', '.woff2', '.js']
+  const safeToCache = ['.css', '.ttf', '.woff', '.woff2', '.js', '.png', '.jpg', '.jpeg', '.webp']
   if (safeToCache.includes(extension)) {
     headers.set("Cache-Control", "max-age=31536000")
   }
