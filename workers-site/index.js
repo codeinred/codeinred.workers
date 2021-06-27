@@ -25,10 +25,14 @@ addEventListener('fetch', event => {
 })
 
 function setCachePolicy(headers, extension) {
-
-  const safeToCache = ['.css', '.ttf', '.woff', '.woff2', '.js', '.png', '.jpg', '.jpeg', '.webp']
-  if (safeToCache.includes(extension)) {
-    headers.set("Cache-Control", "max-age=31536000")
+  // Cached for 1 year (these are fingerprinted)
+  const longTermCache = ['.css', '.ttf', '.woff', '.woff2', '.js', '.png', '.jpg', '.jpeg', '.webp', '.svg']
+  // Cached for 1 week (these are NOT fingerprinted)
+  const shortTermCache = ['.ico', '.json']
+  if (longTermCache.includes(extension)) {
+    headers.set("Cache-Control", "max-age=31536000, public")
+  } else if (shortTermCache.includes(extension)) {
+    headers.set("Cache-Control", "max-age=604800, public")
   }
 }
 
